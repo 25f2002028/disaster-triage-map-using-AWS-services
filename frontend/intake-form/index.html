@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Disaster Incident Report</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 500px; margin: 40px auto; padding: 0 20px; }
+    h2 { color: #d9822b; }
+    label { display: block; margin-top: 15px; font-weight: bold; }
+    input, select, textarea { width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box; }
+    button { margin-top: 20px; padding: 10px 20px; background: #d9822b; color: white; border: none; cursor: pointer; }
+    #status { margin-top: 15px; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h2>Report an Incident</h2>
+  <form id="reportForm">
+    <label>Source Type</label>
+    <select id="source_type">
+      <option value="citizen">Citizen</option>
+      <option value="verified_volunteer">Verified Volunteer</option>
+      <option value="responder">Responder</option>
+    </select>
+
+    <label>Category</label>
+    <select id="category">
+      <option value="injury">Injury</option>
+      <option value="roadblock">Roadblock</option>
+      <option value="gas_leak">Gas Leak</option>
+      <option value="chemical_spill">Chemical Spill</option>
+      <option value="flood">Flood</option>
+      <option value="fire">Fire</option>
+    </select>
+
+    <label>Severity</label>
+    <select id="severity">
+      <option value="low">Low</option>
+      <option value="medium">Medium</option>
+      <option value="high">High</option>
+      <option value="critical">Critical</option>
+    </select>
+
+    <label>Description</label>
+    <textarea id="description" rows="3" placeholder="What's happening?"></textarea>
+
+    <label>Media Type</label>
+    <select id="media_type">
+      <option value="text">Text only</option>
+      <option value="photo">Photo</option>
+      <option value="video">Video</option>
+    </select>
+
+    <label>Upload Evidence (optional)</label>
+    <input type="file" id="fileInput" accept="image/*,video/*">
+
+    <label>Location</label>
+    <button type="button" id="getLocationBtn">📍 Use my current location</button>
+    <input type="text" id="location" placeholder="lat, lng" readonly>
+
+    <button type="submit">Submit Report</button>
+  </form>
+  <div id="status"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
