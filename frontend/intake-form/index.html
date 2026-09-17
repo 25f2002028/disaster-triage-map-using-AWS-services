@@ -2,65 +2,459 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Disaster Incident Report</title>
   <style>
-    body { font-family: Arial, sans-serif; max-width: 500px; margin: 40px auto; padding: 0 20px; }
-    h2 { color: #d9822b; }
-    label { display: block; margin-top: 15px; font-weight: bold; }
-    input, select, textarea { width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box; }
-    button { margin-top: 20px; padding: 10px 20px; background: #d9822b; color: white; border: none; cursor: pointer; }
-    #status { margin-top: 15px; font-weight: bold; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      min-height: 100vh;
+      padding: 40px 20px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    .container {
+      background: white;
+      border-radius: 24px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+      max-width: 700px;
+      width: 100%;
+      padding: 48px;
+      animation: fadeIn 0.6s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+      padding-bottom: 24px;
+      border-bottom: 2px solid #f0f0f0;
+    }
+
+    .header-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      display: block;
+    }
+
+    .header h1 {
+      color: #2c3e50;
+      font-size: 32px;
+      font-weight: 800;
+      margin-bottom: 12px;
+      letter-spacing: -0.5px;
+    }
+
+    .header p {
+      color: #7f8c8d;
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+
+    .form-group {
+      margin-bottom: 24px;
+    }
+
+    .form-group.full-width {
+      grid-column: span 2;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: 600;
+      color: #34495e;
+      font-size: 14px;
+      letter-spacing: 0.3px;
+    }
+
+    .input-group {
+      position: relative;
+    }
+
+    .input-icon {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 18px;
+      color: #95a5a6;
+      pointer-events: none;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 14px 16px;
+      border: 2px solid #e0e6ed;
+      border-radius: 12px;
+      font-size: 15px;
+      transition: all 0.3s ease;
+      background: #f8f9fa;
+      color: #2c3e50;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: #3498db;
+      background: white;
+      box-shadow: 0 0 0 4px rgba(52, 152, 219, 0.1);
+    }
+
+    select {
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%233498db' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 16px center;
+      padding-right: 40px;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 120px;
+      line-height: 1.6;
+    }
+
+    .location-section {
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      padding: 28px;
+      border-radius: 16px;
+      border: 2px solid #dee2e6;
+      margin-top: 8px;
+    }
+
+    .location-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .location-buttons button {
+      padding: 14px 20px;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    #getLocationBtn {
+      background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+      color: white;
+    }
+
+    #getLocationBtn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+    }
+
+    #convertAddressBtn {
+      background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+      color: white;
+    }
+
+    #convertAddressBtn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(39, 174, 96, 0.4);
+    }
+
+    #location {
+      background: #e8f4f8;
+      border-color: #b8e6f0;
+      cursor: not-allowed;
+      font-weight: 600;
+      color: #2980b9;
+    }
+
+    .submit-btn {
+      width: 100%;
+      padding: 18px;
+      background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-top: 32px;
+      letter-spacing: 0.5px;
+    }
+
+    .submit-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(52, 152, 219, 0.4);
+    }
+
+    .submit-btn:active {
+      transform: translateY(0);
+    }
+
+    #status {
+      margin-top: 24px;
+      padding: 20px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 15px;
+      text-align: center;
+      display: none;
+    }
+
+    #status.show {
+      display: block;
+      animation: slideDown 0.3s ease;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    #status.success {
+      background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+      color: #155724;
+      border: 2px solid #c3e6cb;
+    }
+
+    #status.error {
+      background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+      color: #721c24;
+      border: 2px solid #f5c6cb;
+    }
+
+    #status.info {
+      background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+      color: #0c5460;
+      border: 2px solid #bee5eb;
+    }
+
+    #connBadge {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      padding: 12px 24px;
+      border-radius: 30px;
+      font-size: 13px;
+      font-weight: 700;
+      color: white;
+      background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+      z-index: 1000;
+      box-shadow: 0 6px 20px rgba(39, 174, 96, 0.3);
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    #connBadge.offline {
+      background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    }
+
+    .sync-section {
+      margin-top: 32px;
+      padding: 20px;
+      background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+      border-radius: 12px;
+      border: 2px solid #ffc107;
+      display: none;
+    }
+
+    .sync-section.show {
+      display: block;
+      animation: slideDown 0.3s ease;
+    }
+
+    #syncStatus {
+      font-weight: 700;
+      font-size: 14px;
+      color: #856404;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    #offlineQueueList {
+      max-height: 250px;
+      overflow-y: auto;
+    }
+
+    #offlineQueueList div {
+      padding: 12px 16px;
+      background: white;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      font-size: 13px;
+      color: #666;
+      border-left: 4px solid #ffc107;
+    }
+
+    @media (max-width: 768px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .form-group.full-width {
+        grid-column: span 1;
+      }
+
+      .location-buttons {
+        grid-template-columns: 1fr;
+      }
+
+      .container {
+        padding: 32px 24px;
+      }
+    }
   </style>
 </head>
 <body>
-  <h2>Report an Incident</h2>
-  <form id="reportForm">
-    <label>Source Type</label>
-    <select id="source_type">
-      <option value="citizen">Citizen</option>
-      <option value="verified_volunteer">Verified Volunteer</option>
-      <option value="responder">Responder</option>
-    </select>
+  <div id="connBadge">
+    <span>●</span>
+    <span>Online</span>
+  </div>
 
-    <label>Category</label>
-    <select id="category">
-      <option value="injury">Injury</option>
-      <option value="roadblock">Roadblock</option>
-      <option value="gas_leak">Gas Leak</option>
-      <option value="chemical_spill">Chemical Spill</option>
-      <option value="flood">Flood</option>
-      <option value="fire">Fire</option>
-    </select>
+  <div class="container">
+    <div class="header">
+      <span class="header-icon">🚨</span>
+      <h1>Report an Incident</h1>
+      <p>Help us respond quickly by providing accurate information about the emergency</p>
+    </div>
 
-    <label>Severity</label>
-    <select id="severity">
-      <option value="low">Low</option>
-      <option value="medium">Medium</option>
-      <option value="high">High</option>
-      <option value="critical">Critical</option>
-    </select>
+    <form id="reportForm">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Source Type</label>
+          <select id="source_type">
+            <option value="citizen">Citizen</option>
+            <option value="verified_volunteer">Verified Volunteer</option>
+            <option value="responder">Responder</option>
+          </select>
+        </div>
 
-    <label>Description</label>
-    <textarea id="description" rows="3" placeholder="What's happening?"></textarea>
+        <div class="form-group">
+          <label>Category</label>
+          <select id="category">
+            <option value="injury">Injury</option>
+            <option value="roadblock">Roadblock</option>
+            <option value="gas_leak">Gas Leak</option>
+            <option value="chemical_spill">Chemical Spill</option>
+            <option value="flood">Flood</option>
+            <option value="fire">Fire</option>
+          </select>
+        </div>
 
-    <label>Media Type</label>
-    <select id="media_type">
-      <option value="text">Text only</option>
-      <option value="photo">Photo</option>
-      <option value="video">Video</option>
-    </select>
+        <div class="form-group">
+          <label>Severity Level</label>
+          <select id="severity">
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+            <option value="critical">Critical</option>
+          </select>
+        </div>
 
-    <label>Upload Evidence (optional)</label>
-    <input type="file" id="fileInput" accept="image/*,video/*">
+        <div class="form-group">
+          <label>Media Type</label>
+          <select id="media_type">
+            <option value="text">Text only</option>
+            <option value="photo">Photo</option>
+            <option value="video">Video</option>
+          </select>
+        </div>
 
-    <label>Location</label>
-    <button type="button" id="getLocationBtn">📍 Use my current location</button>
-    <input type="text" id="location" placeholder="lat, lng" readonly>
+        <div class="form-group full-width">
+          <label>Description</label>
+          <textarea id="description" rows="4" placeholder="Describe what's happening in detail..."></textarea>
+        </div>
 
-    <button type="submit">Submit Report</button>
-  </form>
-  <div id="status"></div>
+        <div class="form-group full-width">
+          <label>Upload Evidence (optional)</label>
+          <input type="file" id="fileInput" accept="image/*,video/*">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Location Information</label>
+        <div class="location-section">
+          <div class="location-buttons">
+            <button type="button" id="getLocationBtn">
+              <span>📍</span>
+              <span>Use Current Location</span>
+            </button>
+            <button type="button" id="convertAddressBtn">
+              <span>🔄</span>
+              <span>Convert Address</span>
+            </button>
+          </div>
+          <input type="text" id="manualAddress" placeholder="Enter address manually (e.g., 123 Main Street, City)" style="margin-bottom: 12px;">
+          <input type="text" id="location" placeholder="Coordinates will appear here" readonly>
+        </div>
+      </div>
+
+      <button type="submit" class="submit-btn">Submit Report</button>
+    </form>
+
+    <div id="status"></div>
+
+    <div class="sync-section" id="syncSection">
+      <div id="syncStatus"></div>
+      <div id="offlineQueueList"></div>
+    </div>
+  </div>
 
   <script src="script.js"></script>
+  <script>
+    function updateConnBadge() {
+      const badge = document.getElementById('connBadge');
+      if (navigator.onLine) {
+        badge.innerHTML = '<span>●</span><span>Online</span>';
+        badge.classList.remove('offline');
+      } else {
+        badge.innerHTML = '<span>●</span><span>Offline</span>';
+        badge.classList.add('offline');
+      }
+    }
+    window.addEventListener('online', updateConnBadge);
+    window.addEventListener('offline', updateConnBadge);
+    updateConnBadge();
+  </script>
 </body>
 </html>

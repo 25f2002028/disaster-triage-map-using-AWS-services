@@ -67,10 +67,14 @@ def create_new_incident(report):
         'corroboration_count': 1,
         'priority_score': Decimal('0'),
         'status': 'new',
+        'assigned_to': None,
         'status_timeline': [{
-            'status': 'new',
-            'timestamp': datetime.now(timezone.utc).isoformat(),
-            'note': 'Auto-created from first report'
+            'action': 'status_change',
+            'by': 'system',
+            'from': None,
+            'to': 'new',
+            'reason': 'Auto-created from first report',
+            'timestamp': datetime.now(timezone.utc).isoformat()
         }],
         'linked_report_ids': [report['report_id']],
         'created_at': datetime.now(timezone.utc).isoformat(),
@@ -80,25 +84,42 @@ def create_new_incident(report):
     return incident_id
 
 
+def expand_radius_if_needed(incident, new_report_location):
+    if incident.get('incident_type') != 'area' or not new_report_location:
+        return incident.get('radius_m', 0)
+
+    dist = haversine_m(
+        incident['location']['lat'], incident['location']['lng'],
+        new_report_location['lat'], new_report_location['lng']
+    )
+    current_radius = float(incident.get('radius_m', 0))
+    if dist > current_radius:
+        return Decimal(str(dist))
+    return incident['radius_m']
+
+
 def link_report_to_incident(incident_id, report):
     incident = incidents_table.get_item(Key={'incident_id': incident_id})['Item']
+
     linked_reports = incident.get('linked_report_ids', [])
     if report['report_id'] not in linked_reports:
         linked_reports.append(report['report_id'])
 
+    new_radius = expand_radius_if_needed(incident, report.get('location'))
+
     incidents_table.update_item(
         Key={'incident_id': incident_id},
-        UpdateExpression='SET linked_report_ids = :r, corroboration_count = :c, updated_at = :u',
+        UpdateExpression='SET linked_report_ids = :r, corroboration_count = :c, radius_m = :rad, updated_at = :u',
         ExpressionAttributeValues={
             ':r': linked_reports,
             ':c': len(linked_reports),
+            ':rad': new_radius,
             ':u': datetime.now(timezone.utc).isoformat()
         }
     )
 
 
 def lambda_handler(event, context):
-    """Triggered automatically by DynamoDB Streams when a new report is inserted."""
     for record in event.get('Records', []):
         if record['eventName'] != 'INSERT':
             continue
@@ -125,24 +146,3 @@ def lambda_handler(event, context):
         )
 
     return {'statusCode': 200}
-
-
-# ---------- LOCAL TEST BLOCK ----------
-if __name__ == "__main__":
-    test_report_id = 'TEST-REPORT-1'
-
-    reports_table.put_item(Item={
-        'report_id': test_report_id,
-        'incident_id': None,
-        'source_type': 'citizen',
-        'media_type': 'photo',
-        'location': {'lat': Decimal('12.9716'), 'lng': Decimal('77.5946')},
-        'description': 'Smoke coming from building',
-        'severity_claimed': 'high',
-        'category': 'fire',
-        'evidence_s3_key': 'test/key',
-        'timestamp': '2026-09-13T10:00:00Z',
-        'trust_score': None
-    })
-
-    print(f"Test report '{test_report_id}' created.")

@@ -11,10 +11,11 @@ BUCKET_NAME = 'disaster-triage-reports-itworks'
 def lambda_handler(event, context):
     body = json.loads(event['body']) if 'body' in event else event
 
-    report_id = str(uuid.uuid4())
+    # Use the client-generated ID when present, so offline-queue retries
+    # overwrite the same item instead of creating duplicate reports.
+    report_id = body.get('client_report_id') or str(uuid.uuid4())
     evidence_key = f"reports/{report_id}/evidence"
 
-    # Convert location floats to Decimal (DynamoDB requirement)
     raw_location = body.get('location')
     location = None
     if raw_location:
@@ -32,9 +33,14 @@ def lambda_handler(event, context):
         'description': body.get('description', ''),
         'severity_claimed': body.get('severity', 'unknown'),
         'category': body.get('category', 'unknown'),
+        'client_timestamp': body.get('client_timestamp'),
         'evidence_s3_key': evidence_key,
         'timestamp': datetime.now(timezone.utc).isoformat(),
         'trust_score': None
     })
 
-    return {'statusCode': 200, 'body': json.dumps({'report_id': report_id})}
+    return {
+        'statusCode': 200,
+        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+        'body': json.dumps({'report_id': report_id})
+    }

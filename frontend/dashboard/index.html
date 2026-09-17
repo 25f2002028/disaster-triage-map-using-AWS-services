@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Disaster Incident Triage — Dashboard</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: #f0f2f5;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  header h1 {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .responder-input {
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: none;
+    font-size: 14px;
+    width: 160px;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+  }
+
+  .responder-input::placeholder {
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  .responder-input:focus {
+    outline: none;
+    background: rgba(255, 255, 255, 0.3);
+  }
+
+  .header-btn {
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+
+  .header-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+  }
+
+  .status-pill {
+    font-size: 12px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.2);
+    font-weight: 600;
+  }
+
+  .layout {
+    display: flex;
+    height: calc(100vh - 64px);
+  }
+
+  #map {
+    flex: 2;
+    height: 100%;
+  }
+
+  .sidebar {
+    flex: 1;
+    min-width: 380px;
+    max-width: 450px;
+    background: white;
+    border-left: 1px solid #e1e4e8;
+    display: flex;
+    flex-direction: column;
+    box-shadow: -4px 0 12px rgba(0, 0, 0, 0.05);
+  }
+
+  .sidebar-header {
+    padding: 20px;
+    border-bottom: 2px solid #f0f2f5;
+    background: #fafbfc;
+  }
+
+  .sidebar-header h2 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .filter-row {
+    display: flex;
+    gap: 12px;
+  }
+
+  .sidebar-header select {
+    flex: 1;
+    padding: 10px 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 13px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .sidebar-header select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+
+  .incident-list {
+    overflow-y: auto;
+    flex: 1;
+    padding: 12px;
+  }
+
+  .incident-card {
+    padding: 16px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    background: #f8f9fa;
+  }
+
+  .incident-card:hover {
+    background: #eef4ff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+
+  .incident-card.selected {
+    background: #eef4ff;
+    border-color: #667eea;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+    text-transform: uppercase;
+  }
+
+  .badge-critical { background: #dc3545; }
+  .badge-high { background: #fd7e14; }
+  .badge-medium { background: #ffc107; color: #333; }
+  .badge-low { background: #28a745; }
+
+  .card-title {
+    font-weight: 700;
+    font-size: 14px;
+    color: #1a1a2e;
+    margin-bottom: 6px;
+  }
+
+  .card-meta {
+    font-size: 12px;
+    color: #666;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .card-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .priority-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 600;
+    font-size: 12px;
+  }
+
+  .priority-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .detail-panel {
+    padding: 20px;
+    border-top: 2px solid #f0f2f5;
+    background: #fafbfc;
+    max-height: 400px;
+    overflow-y: auto;
+  }
+
+  .detail-panel h3 {
+    margin: 0 0 16px 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: #1a1a2e;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .detail-row {
+    font-size: 13px;
+    margin: 8px 0;
+    color: #333;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .detail-row strong {
+    color: #666;
+  }
+
+  .status-select {
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 2px solid #e0e0e0;
+    width: 100%;
+    margin-top: 12px;
+    font-size: 13px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .status-select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+
+  .action-btn {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 12px;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  }
+
+  .btn-danger {
+    background: #dc3545;
+    color: white;
+  }
+
+  .btn-danger:hover {
+    background: #c82333;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+  }
+
+  .btn-success {
+    background: #28a745;
+    color: white;
+  }
+
+  .empty-state {
+    padding: 40px 20px;
+    color: #999;
+    font-size: 14px;
+    text-align: center;
+  }
+
+  .empty-state-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+  }
+
+  /* Audit Modal */
+  #auditModal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+
+  .modal-content {
+    background: white;
+    width: 800px;
+    max-width: 90%;
+    max-height: 85vh;
+    border-radius: 16px;
+    padding: 24px;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: modalSlideIn 0.3s ease;
+  }
+
+  @keyframes modalSlideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #f0f2f5;
+  }
+
+  .modal-header h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: #1a1a2e;
+  }
+
+  .close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #999;
+    transition: color 0.3s ease;
+  }
+
+  .close-btn:hover {
+    color: #333;
+  }
+
+  .modal-description {
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 20px;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+  }
+
+  .audit-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .audit-table thead {
+    background: #f8f9fa;
+  }
+
+  .audit-table th {
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+    color: #333;
+    border-bottom: 2px solid #e0e0e0;
+  }
+
+  .audit-table td {
+    padding: 12px;
+    border-bottom: 1px solid #f0f2f5;
+    color: #666;
+  }
+
+  .audit-table tr:hover {
+    background: #f8f9fa;
+  }
+
+  #auditLogEmpty {
+    display: none;
+    color: #999;
+    text-align: center;
+    padding: 40px;
+    font-size: 14px;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #f1f1f1;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #a1a1a1;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <h1>🗺️ Incident Triage Dashboard</h1>
+  </div>
+  <div class="header-right">
+    <input id="responderName" type="text" class="responder-input" placeholder="Your name">
+    <button id="auditLogBtn" class="header-btn">📋 Audit Log</button>
+    <span class="status-pill" id="connStatus">Using mock data</span>
+  </div>
+</header>
+
+<div id="auditModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>📋 Manual Override Audit Log</h2>
+      <button onclick="closeAuditLog()" class="close-btn">✕</button>
+    </div>
+    <div class="modal-description">
+      Every status change that skips the normal flow (new → assigned → in progress → resolved) or moves backward is recorded here permanently, with who did it and why. This is separate from the per-incident timeline and persists across sessions.
+    </div>
+    <table class="audit-table">
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Incident</th>
+          <th>Changed By</th>
+          <th>Change</th>
+          <th>Reason</th>
+        </tr>
+      </thead>
+      <tbody id="auditLogBody"></tbody>
+    </table>
+    <div id="auditLogEmpty">No manual overrides recorded yet.</div>
+  </div>
+</div>
+
+<div class="layout">
+  <div id="map"></div>
+
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <h2>🚨 Prioritized Queue</h2>
+      <div class="filter-row">
+        <select id="filterCategory">
+          <option value="all">All categories</option>
+        </select>
+        <select id="sortBy">
+          <option value="priority_score">Priority ↓</option>
+          <option value="freshness">Most recent</option>
+        </select>
+      </div>
+    </div>
+    <div class="incident-list" id="incidentList"></div>
+    <div class="detail-panel" id="detailPanel"></div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
